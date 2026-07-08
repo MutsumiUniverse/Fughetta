@@ -1,0 +1,16 @@
+[package]
+name = "fughetta"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+gtk = { version = "0.11", package = "gtk4", features = ["v4_22"] }
+adw = { version = "0.9", package = "libadwaita", features = ["v1_9"] }
+tracing-subscriber = "0.3"
+tracing = "0.1.44"
+tokio = { version = "1", features = ["rt", "sync"] }
+# mutsumi = { git = "https://github.com/MutsumiUniverse/Mutsumi.git" }
+mutsumi = { path = "../mutsumi" }
+
+[build-dependencies]
+glib-build-tools = "0.22"

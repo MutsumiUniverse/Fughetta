@@ -1,0 +1,23 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $FughettaWindow: Adw.ApplicationWindow {
+    width-request: 1072;
+    height-request: 603;
+
+    content: Gtk.Overlay {
+        $MutsumiPlayer player {
+            video_title: _("Fughetta");
+            video_subtitle: _("A simple player");
+        }
+
+        [overlay]
+        Adw.Bin drag_bin {
+            can-target: false;
+
+            styles [
+                "drop-target",
+            ]
+        }
+    };
+}

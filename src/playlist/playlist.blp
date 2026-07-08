@@ -1,0 +1,76 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PlayList: Adw.Bin {
+    Adw.BottomSheet bottom_sheet {
+        Gtk.Overlay {
+            Gtk.ScrolledWindow {
+                vexpand: true;
+                vscrollbar-policy: automatic;
+                hscrollbar-policy: never;
+
+                Adw.Clamp {
+                    maximum-size: 400;
+                    tightening-threshold: 200;
+
+                    $PlaylistView view {
+                        valign: start;
+                        margin-top: 12;
+                        margin-bottom: 12;
+                    }
+                }
+            }
+
+            [overlay]
+            Adw.StatusPage empty_page {
+                icon-name: "video-reel-symbolic";
+                title: _("No Media");
+                description: _("Drop files or folders here to add them");
+                can-target: false;
+
+                styles [
+                    "drop-target",
+                ]
+            }
+        }
+
+        bottom-bar: Adw.ButtonRow {
+            title: _("Add Source");
+            start-icon-name: "list-add-symbolic";
+            activated => $on_open_sheet() swapped;
+        };
+
+        sheet: Adw.ToolbarView {
+            margin-bottom: 32;
+            Adw.Clamp {
+                maximum-size: 400;
+                tightening-threshold: 200;
+                ListBox {
+                    selection-mode: none;
+
+                    Adw.ButtonRow {
+                        title: _("From File Selector");
+                        start-icon-name: "folder-open-symbolic";
+                        activated => $on_file_selector_activated() swapped;
+                    }
+
+                    Adw.ButtonRow {
+                        title: _("From Folder Selector");
+                        start-icon-name: "folder-open-symbolic";
+                        activated => $on_folder_selector_activated() swapped;
+                    }
+
+                    Adw.ButtonRow {
+                        title: _("From URI");
+                        start-icon-name: "chain-link-symbolic";
+                        activated => $on_uri_activated() swapped;
+                    }
+
+                    styles [
+                        "boxed-list-separate",
+                    ]
+                }
+            }
+        };
+    }
+}

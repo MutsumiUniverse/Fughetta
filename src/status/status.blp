@@ -1,0 +1,58 @@
+using Gtk 4.0;
+using Adw 1;
+
+template $PlaceHolderStatus: Adw.Bin {
+    width-request: 400;
+    child: Adw.StatusPage {
+        icon-name: "media-playback-start-symbolic";
+        title: _("Fughetta");
+        description: _("Pick/Drop File/URI/Folders to play");
+        Box {
+            spacing: 12;
+            orientation: vertical;
+            Box {
+                spacing: 12;
+                orientation: horizontal;
+                Button {
+                    Adw.ButtonContent {
+                        icon-name: "folder-open-symbolic";
+                        label: _("From File Selector");
+                    }
+
+                    clicked => $on_file_selector_activated() swapped;
+
+                    styles [
+                        "suggested-action",
+                        "pill",
+                    ]
+                }
+
+                Button {
+                    Adw.ButtonContent {
+                        icon-name: "chain-link-symbolic";
+                        label: _("From URI");
+                    }
+
+                    clicked => $on_uri_activated() swapped;
+
+                    styles [
+                        "pill",
+                    ]
+                }
+            }
+
+            Button {
+                Adw.ButtonContent {
+                    icon-name: "history-undo-symbolic";
+                    label: _("Restore From History");
+                }
+
+                clicked => $on_restore_history_activated() swapped;
+
+                styles [
+                    "pill",
+                ]
+            }
+        }
+    };
+}
