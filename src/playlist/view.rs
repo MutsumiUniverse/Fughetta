@@ -39,6 +39,9 @@ mod imp {
         /// microseconds
         pub last_frame: Cell<i64>,
         pub suppress_rebuild: Cell<bool>,
+
+        /// Currently activated (playing) position in the playlist.
+        pub pos: Cell<Option<usize>>,
     }
 
     #[glib::object_subclass]
@@ -226,7 +229,13 @@ mod imp {
             self.remove_pending.set(false);
             self.drag_dy.set(0.0);
             self.release_alpha.set(1.0);
+            self.pos.set(None);
             drop(rows);
+
+            if let Some(pos) = self.rows.borrow().iter().position(|r| r.playing()) {
+                self.pos.set(Some(pos));
+            }
+
             obj.queue_resize();
         }
 
@@ -249,12 +258,185 @@ mod imp {
             row.connect_delete_requested(glib::clone!(
                 #[weak(rename_to = imp)]
                 self,
-                move |row| {
-                    if let Some(item) = row.item() {
-                        imp.remove_item(&item);
+                move |row| imp.delete_row(&row)
+            ));
+
+            row.connect_move_to_top_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.move_row_to_top(&row)
+            ));
+
+            row.connect_move_to_bottom_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.move_row_to_bottom(&row)
+            ));
+
+            row.connect_move_up_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.move_row_up(&row)
+            ));
+
+            row.connect_move_down_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.move_row_down(&row)
+            ));
+
+            row.connect_delete_all_above_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.delete_all_above(&row)
+            ));
+
+            row.connect_delete_all_below_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.delete_all_below(&row)
+            ));
+
+            row.connect_delete_others_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.delete_all_except(&row)
+            ));
+
+            row.connect_delete_all_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |_row| imp.delete_all()
+            ));
+
+            row.connect_play_next_requested(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                move |row| imp.play_next(&row)
+            ));
+
+            row.connect_played(glib::clone!(
+                #[weak(rename_to = imp)]
+                self,
+                #[weak]
+                row,
+                move |_| {
+                    if let Some(pos) = imp.row_index(&row) {
+                        imp.pos.set(Some(pos));
                     }
                 }
             ));
+        }
+
+        fn move_row_to_top(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+            {
+                store.remove(pos);
+                store.insert(0, &item);
+            }
+        }
+
+        fn move_row_to_bottom(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+            {
+                store.remove(pos);
+                store.append(&item);
+            }
+        }
+
+        fn move_row_up(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+                && pos > 0
+            {
+                store.remove(pos);
+                store.insert(pos - 1, &item);
+            }
+        }
+
+        fn move_row_down(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+                && pos + 1 < store.n_items()
+            {
+                store.remove(pos);
+                store.insert(pos + 1, &item);
+            }
+        }
+
+        fn delete_row(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item() {
+                self.remove_item(&item);
+            }
+        }
+
+        fn delete_all_above(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+            {
+                store.splice(0, pos, &[] as &[PlaylistItem]);
+            }
+        }
+
+        fn delete_all_below(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+            {
+                let n = store.n_items();
+                if pos + 1 < n {
+                    store.splice(pos + 1, n - pos - 1, &[] as &[PlaylistItem]);
+                }
+            }
+        }
+
+        fn delete_all_except(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(pos) = store.find(&item)
+            {
+                let n = store.n_items();
+                if pos > 0 {
+                    store.splice(0, pos, &[] as &[PlaylistItem]);
+                }
+                if pos + 1 < n {
+                    store.splice(1, n - pos - 1, &[] as &[PlaylistItem]);
+                }
+            }
+        }
+
+        fn delete_all(&self) {
+            if let Some(store) = self.store.borrow().clone() {
+                store.remove_all();
+            }
+        }
+
+        fn play_next(&self, row: &SourceActionRow) {
+            if let Some(item) = row.item()
+                && let Some(store) = self.store.borrow().clone()
+                && let Some(from) = store.find(&item)
+            {
+                let n = store.n_items();
+                let target = match self.pos.get() {
+                    Some(current) => ((current as u32) + 1).min(n),
+                    _ => 0,
+                };
+
+                if from == target || from + 1 == target {
+                    return;
+                }
+
+                store.remove(from);
+                let insert_at = if from < target { target - 1 } else { target };
+                store.insert(insert_at, &item);
+            }
         }
 
         fn setup_reorder_gesture(&self) {

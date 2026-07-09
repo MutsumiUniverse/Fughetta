@@ -6,15 +6,8 @@ template $SourceActionRow: Adw.ActionRow {
     title-lines: 1;
     subtitle-lines: 2;
 
-    [suffix]
-    Gtk.Button {
-        icon-name: "user-trash-symbolic";
-        valign: center;
-        clicked => $on_delete_clicked() swapped;
-
-        styles [
-            "flat",
-            "circular",
-        ]
+    GestureClick {
+        button: 3;
+        released => $right_click_cb() swapped;
     }
 }

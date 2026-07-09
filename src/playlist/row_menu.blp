@@ -1,0 +1,69 @@
+using Gtk 4.0;
+
+menu row-menu {
+    section {
+        item {
+            label: _("Play Next");
+            action: "row.play-next";
+            accel: "N";
+        }
+    }
+
+    section {
+        submenu {
+            label: _("Move");
+            item {
+                label: _("Move to Top");
+                action: "row.move-top";
+                accel: "T";
+            }
+
+            item {
+                label: _("Move to Bottom");
+                action: "row.move-bottom";
+                accel: "B";
+            }
+
+            item {
+                label: _("Move Up");
+                action: "row.move-up";
+            }
+
+            item {
+                label: _("Move Down");
+                action: "row.move-down";
+            }
+        }
+    }
+
+    section {
+        item {
+            label: _("Remove");
+            action: "row.remove";
+            accel: "R";
+        }
+
+        submenu {
+            label: _("Remove Range");
+            item {
+                label: _("Remove All");
+                action: "row.remove-all";
+            }
+
+            item {
+                label: _("Remove Above");
+                action: "row.remove-above";
+            }
+
+            item {
+                label: _("Remove Below");
+                action: "row.remove-below";
+            }
+
+            item {
+                label: _("Remove Others");
+                action: "row.remove-others";
+            }
+        }
+    }
+}

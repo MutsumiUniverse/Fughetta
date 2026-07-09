@@ -22,8 +22,6 @@ mod imp {
             let obj = self.obj();
             obj.set_application_id(Some(crate::APP_ID));
             obj.set_resource_base_path(Some(crate::APP_RESOURCE_PATH));
-
-            obj.set_accels_for_action("win.about", &["<Ctrl>N"]);
         }
     }
 

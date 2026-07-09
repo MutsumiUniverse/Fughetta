@@ -13,10 +13,12 @@ const LEAD: f32 = 26.0;
 const TAIL: f32 = 120.0;
 
 mod imp {
-    use std::cell::{Cell, RefCell};
+    use std::cell::{Cell, OnceCell, RefCell};
     use std::sync::OnceLock;
 
     use glib::subclass::InitializingObject;
+    use gtk::PopoverMenu;
+    use gtk::gdk::Rectangle;
 
     use super::*;
 
@@ -34,6 +36,8 @@ mod imp {
 
         pub anim_start: Cell<i64>,
         pub tick_id: RefCell<Option<gtk::TickCallbackId>>,
+
+        pub right_menu: OnceCell<PopoverMenu>,
     }
 
     impl SourceActionRow {
@@ -99,6 +103,11 @@ mod imp {
                     }
                 });
                 self.tick_id.replace(Some(id));
+
+                // Notify listeners that this row actually started playing.
+                // This fires both on explicit activation and on playlist
+                // auto-advance (which toggles PlaylistItem::current).
+                obj.emit_by_name::<()>("played", &[]);
             } else {
                 obj.remove_css_class("playing");
                 if let Some(id) = self.tick_id.take() {
@@ -126,6 +135,46 @@ mod imp {
         fn class_init(klass: &mut Self::Class) {
             klass.bind_template();
             klass.bind_template_callbacks();
+
+            klass.install_action("row.remove", None, |obj, _, _| {
+                obj.emit_by_name::<()>("delete-requested", &[]);
+            });
+
+            klass.install_action("row.move-top", None, |obj, _, _| {
+                obj.emit_by_name::<()>("move-to-top", &[]);
+            });
+
+            klass.install_action("row.move-bottom", None, |obj, _, _| {
+                obj.emit_by_name::<()>("move-to-bottom", &[]);
+            });
+
+            klass.install_action("row.move-up", None, |obj, _, _| {
+                obj.emit_by_name::<()>("move-up", &[]);
+            });
+
+            klass.install_action("row.move-down", None, |obj, _, _| {
+                obj.emit_by_name::<()>("move-down", &[]);
+            });
+
+            klass.install_action("row.remove-above", None, |obj, _, _| {
+                obj.emit_by_name::<()>("delete-all-above", &[]);
+            });
+
+            klass.install_action("row.remove-below", None, |obj, _, _| {
+                obj.emit_by_name::<()>("delete-all-below", &[]);
+            });
+
+            klass.install_action("row.remove-others", None, |obj, _, _| {
+                obj.emit_by_name::<()>("delete-others", &[]);
+            });
+
+            klass.install_action("row.remove-all", None, |obj, _, _| {
+                obj.emit_by_name::<()>("delete-all", &[]);
+            });
+
+            klass.install_action("row.play-next", None, |obj, _, _| {
+                obj.emit_by_name::<()>("play-next-requested", &[]);
+            });
         }
 
         fn instance_init(obj: &InitializingObject<Self>) {
@@ -137,11 +186,34 @@ mod imp {
     impl ObjectImpl for SourceActionRow {
         fn signals() -> &'static [glib::subclass::Signal] {
             static SIGNALS: OnceLock<Vec<glib::subclass::Signal>> = OnceLock::new();
-            SIGNALS
-                .get_or_init(|| vec![glib::subclass::Signal::builder("delete-requested").build()])
+            SIGNALS.get_or_init(|| {
+                vec![
+                    glib::subclass::Signal::builder("move-to-top").build(),
+                    glib::subclass::Signal::builder("move-to-bottom").build(),
+                    glib::subclass::Signal::builder("move-up").build(),
+                    glib::subclass::Signal::builder("move-down").build(),
+                    glib::subclass::Signal::builder("delete-requested").build(),
+                    glib::subclass::Signal::builder("delete-all-above").build(),
+                    glib::subclass::Signal::builder("delete-all-below").build(),
+                    glib::subclass::Signal::builder("delete-others").build(),
+                    glib::subclass::Signal::builder("delete-all").build(),
+                    glib::subclass::Signal::builder("play-next-requested").build(),
+                    glib::subclass::Signal::builder("played").build(),
+                ]
+            })
+        }
+
+        fn constructed(&self) {
+            self.parent_constructed();
+
+            self.set_right_menu();
         }
 
         fn dispose(&self) {
+            if let Some(right_menu) = self.right_menu.get() {
+                right_menu.unparent();
+            }
+
             if let Some(id) = self.tick_id.take() {
                 id.remove();
             }
@@ -179,9 +251,39 @@ mod imp {
 
     #[gtk::template_callbacks]
     impl SourceActionRow {
+        fn set_right_menu(&self) {
+            let builder =
+                gtk::Builder::from_resource("/io/github/mutsumiuniverse/fughetta/ui/row_menu.ui");
+
+            let menu_model = builder
+                .object::<gtk::gio::Menu>("row-menu")
+                .expect("row-menu should exist in row_menu.ui");
+
+            let popover = PopoverMenu::builder()
+                .menu_model(&menu_model)
+                .halign(gtk::Align::Start)
+                .has_arrow(false)
+                .build();
+
+            popover.set_parent(&*self.obj());
+            self.right_menu
+                .set(popover)
+                .expect("right_menu OnceCell should only be set once");
+        }
+
         #[template_callback]
         fn on_delete_clicked(&self) {
             self.obj().emit_by_name::<()>("delete-requested", &[]);
+        }
+
+        #[template_callback]
+        fn right_click_cb(&self, _n: i32, x: f64, y: f64) {
+            let Some(right_menu) = self.right_menu.get() else {
+                return;
+            };
+
+            right_menu.set_pointing_to(Some(&Rectangle::new(x as i32, y as i32, 0, 0)));
+            right_menu.popup();
         }
     }
 }
@@ -200,6 +302,116 @@ impl SourceActionRow {
     pub fn connect_delete_requested<F: Fn(&Self) + 'static>(&self, f: F) -> glib::SignalHandlerId {
         self.connect_closure(
             "delete-requested",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_move_to_top_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "move-to-top",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_move_to_bottom_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "move-to-bottom",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_move_up_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "move-up",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_move_down_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "move-down",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_delete_all_above_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "delete-all-above",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_delete_all_below_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "delete-all-below",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_delete_others_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "delete-others",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_delete_all_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "delete-all",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_play_next_requested<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "play-next-requested",
+            false,
+            glib::closure_local!(move |obj: Self| f(&obj)),
+        )
+    }
+
+    pub fn connect_played<F: Fn(&Self) + 'static>(
+        &self,
+        f: F,
+    ) -> glib::SignalHandlerId {
+        self.connect_closure(
+            "played",
             false,
             glib::closure_local!(move |obj: Self| f(&obj)),
         )

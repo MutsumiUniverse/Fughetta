@@ -225,7 +225,7 @@ dependencies = [
 
 [[package]]
 name = "fughetta"
-version = "0.1.0"
+version = "0.1.0-alpha26070801"
 dependencies = [
  "glib-build-tools",
  "gtk4",
