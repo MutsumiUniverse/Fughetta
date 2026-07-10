@@ -15,7 +15,6 @@ template $PlayList: Adw.Bin {
                     spacing: 12;
 
                     Adw.ToggleGroup {
-
                         notify::active-name => $on_repeat_mode_notify() swapped;
 
                         Adw.Toggle {
@@ -35,7 +34,6 @@ template $PlayList: Adw.Bin {
                     }
 
                     Adw.ToggleGroup {
-
                         notify::active-name => $on_shuffle_notify() swapped;
 
                         Adw.Toggle {
@@ -49,7 +47,6 @@ template $PlayList: Adw.Bin {
                         }
                     }
                 }
-
 
                 Gtk.ScrolledWindow {
                     vexpand: true;
@@ -69,17 +66,26 @@ template $PlayList: Adw.Bin {
                 }
             }
 
-
             [overlay]
             Adw.StatusPage empty_page {
                 icon-name: "video-reel-symbolic";
                 title: _("No Media");
                 description: _("Drop files or folders here to add them");
                 can-target: false;
+            }
 
-                styles [
-                    "drop-target",
-                ]
+            [overlay]
+            Revealer drag_revealer {
+                reveal-child: false;
+                transition-type: crossfade;
+                transition-duration: 250;
+                visible: bind $revealer_visible(drag_revealer.reveal-child, drag_revealer.child-revealed) as <bool>;
+
+                Adw.Bin {
+                    styles [
+                        "drop-target",
+                    ]
+                }
             }
         }
 
@@ -91,9 +97,11 @@ template $PlayList: Adw.Bin {
 
         sheet: Adw.ToolbarView {
             margin-bottom: 32;
+
             Adw.Clamp {
                 maximum-size: 400;
                 tightening-threshold: 200;
+
                 ListBox {
                     selection-mode: none;
 

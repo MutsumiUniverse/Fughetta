@@ -32,6 +32,8 @@ mod imp {
         pub view: TemplateChild<super::PlaylistView>,
         #[template_child]
         pub empty_page: TemplateChild<adw::StatusPage>,
+        #[template_child]
+        pub drag_revealer: TemplateChild<gtk::Revealer>,
 
         #[property(get, set = Self::set_store, nullable)]
         pub store: RefCell<Option<gio::ListStore>>,
@@ -116,16 +118,14 @@ mod imp {
                 #[upgrade_or]
                 gdk::DragAction::empty(),
                 move |_, _, _| {
-                    if imp.empty_page.is_visible() {
-                        imp.empty_page.add_css_class("drop-hover");
-                    }
+                    imp.drag_revealer.set_reveal_child(true);
                     gdk::DragAction::COPY
                 }
             ));
             drop.connect_leave(glib::clone!(
                 #[weak(rename_to = imp)]
                 self,
-                move |_| imp.empty_page.remove_css_class("drop-hover")
+                move |_| imp.drag_revealer.set_reveal_child(false)
             ));
             drop.connect_drop(glib::clone!(
                 #[weak(rename_to = imp)]
@@ -133,7 +133,7 @@ mod imp {
                 #[upgrade_or]
                 false,
                 move |_, value, _, _| {
-                    imp.empty_page.remove_css_class("drop-hover");
+                    imp.drag_revealer.set_reveal_child(false);
                     let Ok(files) = value.get::<gdk::FileList>() else {
                         return false;
                     };
@@ -159,6 +159,11 @@ mod imp {
         #[template_callback]
         fn on_open_sheet(&self) {
             self.bottom_sheet.set_open(true);
+        }
+
+        #[template_callback]
+        fn revealer_visible(&self, reveal_child: bool, child_revealed: bool) -> bool {
+            reveal_child || child_revealed
         }
 
         #[template_callback]
@@ -373,7 +378,7 @@ mod imp {
                 "consecutive" => {
                     player.set_loop_playlist("no");
                     player.set_loop_file("no");
-                },
+                }
                 "repeat" => {
                     player.set_loop_playlist("yes");
                     player.set_loop_file("no");

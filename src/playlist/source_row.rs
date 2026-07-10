@@ -388,8 +388,6 @@ impl SourceActionRow {
 
         view.imp().play_next(self);
     }
-
-
 }
 
 impl Default for SourceActionRow {

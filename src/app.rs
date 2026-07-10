@@ -29,8 +29,9 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
 
-            mutsumi::init();
             crate::css::init();
+            mutsumi::init();
+
             crate::FughettaWindow::ensure_type();
         }
 

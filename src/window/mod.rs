@@ -11,6 +11,8 @@ use mutsumi::MutsumiPlayer;
 use crate::playlist::PlayList;
 
 mod imp {
+    use std::cell::OnceCell;
+
     use crate::playlist::PlaylistFileItem;
     use glib::subclass::InitializingObject;
     use gtk::{gdk, glib::WeakRef};
@@ -25,8 +27,6 @@ mod imp {
     pub struct FughettaWindow {
         #[template_child]
         pub player: TemplateChild<MutsumiPlayer>,
-        #[template_child]
-        pub drag_bin: TemplateChild<adw::Bin>,
 
         pub playlist: WeakRef<PlayList>,
         pub about_dialog: FughettaAboutDialog,
@@ -88,6 +88,7 @@ mod imp {
                 ),
             );
 
+            self.setup_drag_bin();
             self.setup_file_drop();
         }
     }
@@ -98,37 +99,42 @@ mod imp {
     impl AdwApplicationWindowImpl for FughettaWindow {}
 
     impl FughettaWindow {
+        fn setup_drag_bin(&self) {
+            let drag_bin = adw::Bin::builder().css_classes(vec!["drop-target"]).build();
+
+            self.player.drag_revealer().set_child(Some(&drag_bin));
+        }
+
         fn setup_file_drop(&self) {
             let drop = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
 
-            let drag_page = self.drag_bin.get();
+            let revealer = self.player.drag_revealer();
 
             drop.connect_enter(glib::clone!(
                 #[weak]
-                drag_page,
+                revealer,
                 #[upgrade_or]
                 gdk::DragAction::empty(),
                 move |_, _, _| {
-                    drag_page.add_css_class("drop-hover");
+                    revealer.set_reveal_child(true);
                     gdk::DragAction::COPY
                 }
             ));
 
             drop.connect_leave(glib::clone!(
                 #[weak]
-                drag_page,
-                move |_| drag_page.remove_css_class("drop-hover")
+                revealer,
+                move |_| {
+                    revealer.set_reveal_child(false);
+                }
             ));
 
             drop.connect_drop(glib::clone!(
-                #[weak]
-                drag_page,
                 #[weak(rename_to = imp)]
                 self,
                 #[upgrade_or]
                 false,
                 move |_, value, _, _| {
-                    drag_page.remove_css_class("drop-hover");
                     let Ok(files) = value.get::<gdk::FileList>() else {
                         return false;
                     };
@@ -147,7 +153,7 @@ mod imp {
                 }
             ));
 
-            self.obj().add_controller(drop);
+            self.player.content_overlay().add_controller(drop);
         }
     }
 }

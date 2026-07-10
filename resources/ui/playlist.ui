@@ -91,9 +91,26 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                 <property name="title" translatable="yes">No Media</property>
                 <property name="description" translatable="yes">Drop files or folders here to add them</property>
                 <property name="can-target">false</property>
-                <style>
-                  <class name="drop-target"/>
-                </style>
+              </object>
+            </child>
+            <child type="overlay">
+              <object class="GtkRevealer" id="drag_revealer">
+                <property name="reveal-child">false</property>
+                <property name="transition-type">1</property>
+                <property name="transition-duration">250</property>
+                <binding name="visible">
+                  <closure function="revealer_visible" type="gboolean">
+                    <lookup name="reveal-child" type="GtkRevealer">drag_revealer</lookup>
+                    <lookup name="child-revealed" type="GtkRevealer">drag_revealer</lookup>
+                  </closure>
+                </binding>
+                <child>
+                  <object class="AdwBin">
+                    <style>
+                      <class name="drop-target"/>
+                    </style>
+                  </object>
+                </child>
               </object>
             </child>
           </object>
