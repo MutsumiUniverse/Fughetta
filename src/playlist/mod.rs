@@ -356,6 +356,58 @@ mod imp {
 
             *handler.borrow_mut() = Some(id);
         }
+
+        #[template_callback]
+        fn on_repeat_mode_notify(&self, _pspec: glib::ParamSpec, group: &adw::ToggleGroup) {
+            let Some(p) = self.player.upgrade() else {
+                return;
+            };
+
+            let Some(mode) = group.active_name() else {
+                return;
+            };
+
+            let player = p.player();
+
+            match mode.as_str() {
+                "consecutive" => {
+                    player.set_loop_playlist("no");
+                    player.set_loop_file("no");
+                },
+                "repeat" => {
+                    player.set_loop_playlist("yes");
+                    player.set_loop_file("no");
+                }
+                "repeat-one" => {
+                    player.set_loop_playlist("no");
+                    player.set_loop_file("yes");
+                }
+                _ => (),
+            }
+        }
+
+        #[template_callback]
+        fn on_shuffle_notify(&self, _pspec: glib::ParamSpec, group: &adw::ToggleGroup) {
+            let Some(p) = self.player.upgrade() else {
+                return;
+            };
+
+            let Some(mode) = group.active_name() else {
+                return;
+            };
+
+            let player = p.player();
+
+            match mode.as_str() {
+                "unshuffle" => {
+                    player.playlist_unshuffle();
+                }
+                "shuffle" => {
+                    player.playlist_shuffle();
+                }
+                _ => (),
+            }
+        }
     }
 
     impl WidgetImpl for PlayList {}

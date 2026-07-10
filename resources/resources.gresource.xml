@@ -5,6 +5,10 @@
     <file preprocess="xml-stripblanks" alias="chain-link-symbolic.svg">icons/scalable/actions/chain-link-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="folder-open-symbolic.svg">icons/scalable/actions/folder-open-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="history-undo-symbolic.svg">icons/scalable/actions/history-undo-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="playlist-consecutive-symbolic.svg">icons/scalable/actions/playlist-consecutive-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="playlist-repeat-song-symbolic.svg">icons/scalable/actions/playlist-repeat-song-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="playlist-repeat-symbolic.svg">icons/scalable/actions/playlist-repeat-symbolic.svg</file>
+    <file preprocess="xml-stripblanks" alias="playlist-shuffle-symbolic.svg">icons/scalable/actions/playlist-shuffle-symbolic.svg</file>
     <file preprocess="xml-stripblanks" alias="video-reel-symbolic.svg">icons/scalable/actions/video-reel-symbolic.svg</file>
   </gresource>
   <gresource prefix="/io/github/mutsumiuniverse/fughetta/ui/">

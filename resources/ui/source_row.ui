@@ -12,6 +12,12 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
     <property name="subtitle-lines">2</property>
     <child>
       <object class="GtkGestureClick">
+        <property name="button">1</property>
+        <signal name="released" handler="left_click_cb" swapped="True"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkGestureClick">
         <property name="button">3</property>
         <signal name="released" handler="right_click_cb" swapped="True"/>
       </object>

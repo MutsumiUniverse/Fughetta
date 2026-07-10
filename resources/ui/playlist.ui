@@ -12,19 +12,73 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
         <child>
           <object class="GtkOverlay">
             <child>
-              <object class="GtkScrolledWindow">
-                <property name="vexpand">true</property>
-                <property name="vscrollbar-policy">1</property>
-                <property name="hscrollbar-policy">2</property>
+              <object class="GtkBox">
+                <property name="orientation">1</property>
                 <child>
-                  <object class="AdwClamp">
-                    <property name="maximum-size">400</property>
-                    <property name="tightening-threshold">200</property>
+                  <object class="GtkBox">
+                    <property name="valign">3</property>
+                    <property name="halign">3</property>
+                    <property name="margin-top">6</property>
+                    <property name="orientation">0</property>
+                    <property name="spacing">12</property>
                     <child>
-                      <object class="PlaylistView" id="view">
-                        <property name="valign">start</property>
-                        <property name="margin-top">12</property>
-                        <property name="margin-bottom">12</property>
+                      <object class="AdwToggleGroup">
+                        <signal name="notify::active-name" handler="on_repeat_mode_notify" swapped="True"/>
+                        <child>
+                          <object class="AdwToggle">
+                            <property name="name">consecutive</property>
+                            <property name="icon-name">playlist-consecutive-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwToggle">
+                            <property name="name">repeat</property>
+                            <property name="icon-name">playlist-repeat-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwToggle">
+                            <property name="name">repeat-one</property>
+                            <property name="icon-name">playlist-repeat-song-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="AdwToggleGroup">
+                        <signal name="notify::active-name" handler="on_shuffle_notify" swapped="True"/>
+                        <child>
+                          <object class="AdwToggle">
+                            <property name="name">unshuffle</property>
+                            <property name="icon-name">playlist-consecutive-symbolic</property>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="AdwToggle">
+                            <property name="name">shuffle</property>
+                            <property name="icon-name">playlist-shuffle-symbolic</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkScrolledWindow">
+                    <property name="vexpand">true</property>
+                    <property name="vscrollbar-policy">1</property>
+                    <property name="hscrollbar-policy">2</property>
+                    <child>
+                      <object class="AdwClamp">
+                        <property name="maximum-size">400</property>
+                        <property name="tightening-threshold">200</property>
+                        <child>
+                          <object class="PlaylistView" id="view">
+                            <property name="valign">start</property>
+                            <property name="margin-top">12</property>
+                            <property name="margin-bottom">12</property>
+                          </object>
+                        </child>
                       </object>
                     </child>
                   </object>

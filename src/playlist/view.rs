@@ -209,7 +209,7 @@ mod imp {
                 for item in store.iter::<PlaylistItem>().flatten() {
                     let row = SourceActionRow::new(&item);
                     row.set_parent(&*self.obj());
-                    self.setup_row(&row);
+                    row.set_view(Some(&*self.obj()));
                     rows.push(row);
                 }
             }
@@ -239,96 +239,13 @@ mod imp {
             obj.queue_resize();
         }
 
-        fn setup_row(&self, row: &SourceActionRow) {
-            let click = gtk::GestureClick::new();
-            click.connect_released(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                #[weak]
-                row,
-                move |_, _, _, _| {
-                    if let Some(pos) = imp.row_index(&row) {
-                        imp.obj()
-                            .emit_by_name::<()>("position-activated", &[&(pos as i64)]);
-                    }
-                }
-            ));
-            row.add_controller(click);
-
-            row.connect_delete_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.delete_row(&row)
-            ));
-
-            row.connect_move_to_top_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.move_row_to_top(&row)
-            ));
-
-            row.connect_move_to_bottom_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.move_row_to_bottom(&row)
-            ));
-
-            row.connect_move_up_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.move_row_up(&row)
-            ));
-
-            row.connect_move_down_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.move_row_down(&row)
-            ));
-
-            row.connect_delete_all_above_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.delete_all_above(&row)
-            ));
-
-            row.connect_delete_all_below_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.delete_all_below(&row)
-            ));
-
-            row.connect_delete_others_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.delete_all_except(&row)
-            ));
-
-            row.connect_delete_all_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |_row| imp.delete_all()
-            ));
-
-            row.connect_play_next_requested(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                move |row| imp.play_next(&row)
-            ));
-
-            row.connect_played(glib::clone!(
-                #[weak(rename_to = imp)]
-                self,
-                #[weak]
-                row,
-                move |_| {
-                    if let Some(pos) = imp.row_index(&row) {
-                        imp.pos.set(Some(pos));
-                    }
-                }
-            ));
+        pub fn set_playing_position(&self, row: &SourceActionRow) {
+            if let Some(pos) = self.row_index(row) {
+                self.pos.set(Some(pos));
+            }
         }
 
-        fn move_row_to_top(&self, row: &SourceActionRow) {
+        pub fn move_row_to_top(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -338,7 +255,7 @@ mod imp {
             }
         }
 
-        fn move_row_to_bottom(&self, row: &SourceActionRow) {
+        pub fn move_row_to_bottom(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -348,7 +265,7 @@ mod imp {
             }
         }
 
-        fn move_row_up(&self, row: &SourceActionRow) {
+        pub fn move_row_up(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -359,7 +276,7 @@ mod imp {
             }
         }
 
-        fn move_row_down(&self, row: &SourceActionRow) {
+        pub fn move_row_down(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -370,13 +287,13 @@ mod imp {
             }
         }
 
-        fn delete_row(&self, row: &SourceActionRow) {
+        pub fn remove_row(&self, row: &SourceActionRow) {
             if let Some(item) = row.item() {
                 self.remove_item(&item);
             }
         }
 
-        fn delete_all_above(&self, row: &SourceActionRow) {
+        pub fn remove_all_above(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -385,7 +302,7 @@ mod imp {
             }
         }
 
-        fn delete_all_below(&self, row: &SourceActionRow) {
+        pub fn remove_all_below(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -397,7 +314,7 @@ mod imp {
             }
         }
 
-        fn delete_all_except(&self, row: &SourceActionRow) {
+        pub fn remove_all_except(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(pos) = store.find(&item)
@@ -412,13 +329,13 @@ mod imp {
             }
         }
 
-        fn delete_all(&self) {
+        pub fn remove_all_rows(&self) {
             if let Some(store) = self.store.borrow().clone() {
                 store.remove_all();
             }
         }
 
-        fn play_next(&self, row: &SourceActionRow) {
+        pub fn play_next(&self, row: &SourceActionRow) {
             if let Some(item) = row.item()
                 && let Some(store) = self.store.borrow().clone()
                 && let Some(from) = store.find(&item)
@@ -526,7 +443,7 @@ mod imp {
             self.obj().add_controller(drag);
         }
 
-        fn row_index(&self, row: &SourceActionRow) -> Option<usize> {
+        pub fn row_index(&self, row: &SourceActionRow) -> Option<usize> {
             self.rows.borrow().iter().position(|r| r == row)
         }
 

@@ -4,22 +4,71 @@ using Adw 1;
 template $PlayList: Adw.Bin {
     Adw.BottomSheet bottom_sheet {
         Gtk.Overlay {
-            Gtk.ScrolledWindow {
-                vexpand: true;
-                vscrollbar-policy: automatic;
-                hscrollbar-policy: never;
+            Box {
+                orientation: vertical;
 
-                Adw.Clamp {
-                    maximum-size: 400;
-                    tightening-threshold: 200;
+                Box {
+                    valign: center;
+                    halign: center;
+                    margin-top: 6;
+                    orientation: horizontal;
+                    spacing: 12;
 
-                    $PlaylistView view {
-                        valign: start;
-                        margin-top: 12;
-                        margin-bottom: 12;
+                    Adw.ToggleGroup {
+
+                        notify::active-name => $on_repeat_mode_notify() swapped;
+
+                        Adw.Toggle {
+                            name: "consecutive";
+                            icon-name: "playlist-consecutive-symbolic";
+                        }
+
+                        Adw.Toggle {
+                            name: "repeat";
+                            icon-name: "playlist-repeat-symbolic";
+                        }
+
+                        Adw.Toggle {
+                            name: "repeat-one";
+                            icon-name: "playlist-repeat-song-symbolic";
+                        }
+                    }
+
+                    Adw.ToggleGroup {
+
+                        notify::active-name => $on_shuffle_notify() swapped;
+
+                        Adw.Toggle {
+                            name: "unshuffle";
+                            icon-name: "playlist-consecutive-symbolic";
+                        }
+
+                        Adw.Toggle {
+                            name: "shuffle";
+                            icon-name: "playlist-shuffle-symbolic";
+                        }
+                    }
+                }
+
+
+                Gtk.ScrolledWindow {
+                    vexpand: true;
+                    vscrollbar-policy: automatic;
+                    hscrollbar-policy: never;
+
+                    Adw.Clamp {
+                        maximum-size: 400;
+                        tightening-threshold: 200;
+
+                        $PlaylistView view {
+                            valign: start;
+                            margin-top: 12;
+                            margin-bottom: 12;
+                        }
                     }
                 }
             }
+
 
             [overlay]
             Adw.StatusPage empty_page {

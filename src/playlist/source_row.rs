@@ -3,6 +3,8 @@ use adw::subclass::prelude::*;
 use gtk::{CompositeTemplate, glib};
 use mutsumi::PlaylistItem;
 
+use crate::playlist::PlaylistView;
+
 /// Seconds for the ripple to sweep across the row once.
 const SWEEP_PERIOD: f64 = 0.9;
 /// Nominal spacing between grain particles, in pixels.
@@ -19,6 +21,9 @@ mod imp {
     use glib::subclass::InitializingObject;
     use gtk::PopoverMenu;
     use gtk::gdk::Rectangle;
+    use gtk::glib::WeakRef;
+
+    use crate::playlist::PlaylistView;
 
     use super::*;
 
@@ -38,6 +43,8 @@ mod imp {
         pub tick_id: RefCell<Option<gtk::TickCallbackId>>,
 
         pub right_menu: OnceCell<PopoverMenu>,
+
+        pub view: WeakRef<PlaylistView>,
     }
 
     impl SourceActionRow {
@@ -104,10 +111,7 @@ mod imp {
                 });
                 self.tick_id.replace(Some(id));
 
-                // Notify listeners that this row actually started playing.
-                // This fires both on explicit activation and on playlist
-                // auto-advance (which toggles PlaylistItem::current).
-                obj.emit_by_name::<()>("played", &[]);
+                obj.set_view_playing_position();
             } else {
                 obj.remove_css_class("playing");
                 if let Some(id) = self.tick_id.take() {
@@ -137,43 +141,43 @@ mod imp {
             klass.bind_template_callbacks();
 
             klass.install_action("row.remove", None, |obj, _, _| {
-                obj.emit_by_name::<()>("delete-requested", &[]);
+                obj.remove_row();
             });
 
             klass.install_action("row.move-top", None, |obj, _, _| {
-                obj.emit_by_name::<()>("move-to-top", &[]);
+                obj.move_to_top();
             });
 
             klass.install_action("row.move-bottom", None, |obj, _, _| {
-                obj.emit_by_name::<()>("move-to-bottom", &[]);
+                obj.move_to_bottom();
             });
 
             klass.install_action("row.move-up", None, |obj, _, _| {
-                obj.emit_by_name::<()>("move-up", &[]);
+                obj.move_up();
             });
 
             klass.install_action("row.move-down", None, |obj, _, _| {
-                obj.emit_by_name::<()>("move-down", &[]);
+                obj.move_down();
             });
 
             klass.install_action("row.remove-above", None, |obj, _, _| {
-                obj.emit_by_name::<()>("delete-all-above", &[]);
+                obj.remove_above();
             });
 
             klass.install_action("row.remove-below", None, |obj, _, _| {
-                obj.emit_by_name::<()>("delete-all-below", &[]);
+                obj.remove_below();
             });
 
             klass.install_action("row.remove-others", None, |obj, _, _| {
-                obj.emit_by_name::<()>("delete-others", &[]);
+                obj.remove_others();
             });
 
             klass.install_action("row.remove-all", None, |obj, _, _| {
-                obj.emit_by_name::<()>("delete-all", &[]);
+                obj.remove_all();
             });
 
             klass.install_action("row.play-next", None, |obj, _, _| {
-                obj.emit_by_name::<()>("play-next-requested", &[]);
+                obj.play_next();
             });
         }
 
@@ -184,25 +188,6 @@ mod imp {
 
     #[glib::derived_properties]
     impl ObjectImpl for SourceActionRow {
-        fn signals() -> &'static [glib::subclass::Signal] {
-            static SIGNALS: OnceLock<Vec<glib::subclass::Signal>> = OnceLock::new();
-            SIGNALS.get_or_init(|| {
-                vec![
-                    glib::subclass::Signal::builder("move-to-top").build(),
-                    glib::subclass::Signal::builder("move-to-bottom").build(),
-                    glib::subclass::Signal::builder("move-up").build(),
-                    glib::subclass::Signal::builder("move-down").build(),
-                    glib::subclass::Signal::builder("delete-requested").build(),
-                    glib::subclass::Signal::builder("delete-all-above").build(),
-                    glib::subclass::Signal::builder("delete-all-below").build(),
-                    glib::subclass::Signal::builder("delete-others").build(),
-                    glib::subclass::Signal::builder("delete-all").build(),
-                    glib::subclass::Signal::builder("play-next-requested").build(),
-                    glib::subclass::Signal::builder("played").build(),
-                ]
-            })
-        }
-
         fn constructed(&self) {
             self.parent_constructed();
 
@@ -285,6 +270,19 @@ mod imp {
             right_menu.set_pointing_to(Some(&Rectangle::new(x as i32, y as i32, 0, 0)));
             right_menu.popup();
         }
+
+        #[template_callback]
+        fn left_click_cb(&self, _n: i32, _x: f64, _y: f64) {
+            let Some(view) = self.view.upgrade() else {
+                return;
+            };
+
+            let Some(pos) = view.imp().row_index(&*self.obj()) else {
+                return;
+            };
+
+            view.emit_by_name::<()>("position-activated", &[&(pos as i64)]);
+        }
     }
 }
 
@@ -299,123 +297,99 @@ impl SourceActionRow {
         glib::Object::builder().property("item", item).build()
     }
 
-    pub fn connect_delete_requested<F: Fn(&Self) + 'static>(&self, f: F) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "delete-requested",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn set_view(&self, view: Option<&PlaylistView>) {
+        self.imp().view.set(view);
     }
 
-    pub fn connect_move_to_top_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "move-to-top",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn set_view_playing_position(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().set_playing_position(self);
     }
 
-    pub fn connect_move_to_bottom_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "move-to-bottom",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn move_to_top(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().move_row_to_top(self);
     }
 
-    pub fn connect_move_up_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "move-up",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn move_to_bottom(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().move_row_to_bottom(self);
     }
 
-    pub fn connect_move_down_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "move-down",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn move_up(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().move_row_up(self);
     }
 
-    pub fn connect_delete_all_above_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "delete-all-above",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn move_down(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().move_row_down(self);
     }
 
-    pub fn connect_delete_all_below_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "delete-all-below",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn remove_row(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().remove_row(self);
     }
 
-    pub fn connect_delete_others_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "delete-others",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn remove_above(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().remove_all_above(self);
     }
 
-    pub fn connect_delete_all_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "delete-all",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn remove_below(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().remove_all_below(self);
     }
 
-    pub fn connect_play_next_requested<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "play-next-requested",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn remove_others(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().remove_all_except(self);
     }
 
-    pub fn connect_played<F: Fn(&Self) + 'static>(
-        &self,
-        f: F,
-    ) -> glib::SignalHandlerId {
-        self.connect_closure(
-            "played",
-            false,
-            glib::closure_local!(move |obj: Self| f(&obj)),
-        )
+    pub fn remove_all(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().remove_all_rows();
     }
+
+    pub fn play_next(&self) {
+        let Some(view) = self.imp().view.upgrade() else {
+            return;
+        };
+
+        view.imp().play_next(self);
+    }
+
+
 }
 
 impl Default for SourceActionRow {
