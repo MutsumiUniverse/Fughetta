@@ -317,7 +317,7 @@ mod imp {
 
                     let item = PlaylistItem::with_full_uri(&url, false);
 
-                    callback(&obj.imp(), item);
+                    callback(obj.imp(), item);
                 }
             ));
         }
@@ -423,6 +423,12 @@ glib::wrapper! {
     pub struct PlayList(ObjectSubclass<imp::PlayList>)
         @extends gtk::Widget, adw::Bin,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
+}
+
+impl Default for PlayList {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl PlayList {

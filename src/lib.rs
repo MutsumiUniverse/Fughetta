@@ -1,12 +1,18 @@
 mod app;
+mod args;
 mod css;
+mod files;
+mod macros;
 mod playlist;
 mod status;
 mod window;
 
+use args::*;
+use clap::Parser;
 use gtk::prelude::*;
 
 pub use app::FughettaApplication as Application;
+pub use files::*;
 pub use playlist::{PlayList, SourceActionRow};
 pub use window::*;
 
@@ -16,9 +22,7 @@ pub const CLIENT_ID: &str = "Fughetta";
 pub const CLIENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn run() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+    Args::parse().init();
 
     gtk::gio::resources_register_include!("fughetta.gresource")
         .expect("Failed to register resources.");

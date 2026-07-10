@@ -11,11 +11,14 @@ use mutsumi::MutsumiPlayer;
 use crate::playlist::PlayList;
 
 mod imp {
-    use std::cell::OnceCell;
+    use std::time::Duration;
 
-    use crate::playlist::PlaylistFileItem;
+    use crate::{ARG_FILES, playlist::PlaylistFileItem};
     use glib::subclass::InitializingObject;
-    use gtk::{gdk, glib::WeakRef};
+    use gtk::{
+        gdk,
+        glib::{WeakRef, spawn_future_local},
+    };
     use mutsumi::PlaylistItem;
 
     use crate::status::PlaceHolderStatus;
@@ -90,6 +93,7 @@ mod imp {
 
             self.setup_drag_bin();
             self.setup_file_drop();
+            self.setup_files_external();
         }
     }
 
@@ -103,6 +107,33 @@ mod imp {
             let drag_bin = adw::Bin::builder().css_classes(vec!["drop-target"]).build();
 
             self.player.drag_revealer().set_child(Some(&drag_bin));
+        }
+
+        fn setup_files_external(&self) {
+            let external_files = ARG_FILES.get().cloned().unwrap_or_default();
+
+            if external_files.is_empty() {
+                return;
+            }
+
+            let items: Vec<PlaylistItem> = external_files
+                .iter()
+                .map(PlaylistItem::from_file)
+                .collect();
+
+            let Some(playlist) = self.playlist.upgrade() else {
+                return;
+            };
+
+            // we need to wait mpv proxy and event loop init
+            // and I have no idea how to do it properly, so just wait 200ms
+            spawn_future_local(async move {
+                let _ = glib::future_with_timeout(Duration::from_millis(200), async move {
+                    playlist.imp().insert_playlist_items(0, &items);
+                    playlist.imp().play_when_store_changed();
+                })
+                .await;
+            });
         }
 
         fn setup_file_drop(&self) {

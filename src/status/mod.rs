@@ -1,17 +1,12 @@
-use std::{
-    cell::RefCell,
-    rc::{self, Rc},
-};
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gtk::{CompositeTemplate, glib};
-use mutsumi::MutsumiPlayer;
 
 use crate::PlayList;
 
 mod imp {
-    use mutsumi::MutsumiPlayer;
+    
 
     use crate::PlayList;
 
@@ -59,7 +54,7 @@ impl PlaceHolderStatus {
 
     #[template_callback]
     fn on_restore_history_activated(&self, _button: &gtk::Button) {
-        let Some(playlist) = self.imp().playlist.upgrade() else {
+        let Some(_playlist) = self.imp().playlist.upgrade() else {
             return;
         };
 
@@ -95,7 +90,7 @@ impl PlaceHolderStatus {
         playlist
             .imp()
             .uri_entry_with_callback(move |playlist, items| {
-                playlist.insert_playlist_items(0, &vec![items]);
+                playlist.insert_playlist_items(0, &[items]);
 
                 playlist.play_when_store_changed();
             });

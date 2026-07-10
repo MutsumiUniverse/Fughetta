@@ -3,10 +3,14 @@ use gtk::glib;
 
 mod imp {
 
+    use crate::ARG_FILES;
+
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct FughettaApplication;
+    pub struct FughettaApplication {
+        files: Vec<gtk::gio::File>,
+    }
 
     #[glib::object_subclass]
     impl ObjectSubclass for FughettaApplication {
@@ -22,6 +26,7 @@ mod imp {
             let obj = self.obj();
             obj.set_application_id(Some(crate::APP_ID));
             obj.set_resource_base_path(Some(crate::APP_RESOURCE_PATH));
+            obj.set_flags(gtk::gio::ApplicationFlags::HANDLES_OPEN);
         }
     }
 
@@ -42,6 +47,12 @@ mod imp {
             // window.load_window_state();
             window.present();
         }
+
+        fn open(&self, files: &[gtk::gio::File], _hint: &str) {
+            ARG_FILES
+                .set(files.to_vec())
+                .expect("Failed to set ARG_FILES???");
+        }
     }
 
     impl GtkApplicationImpl for FughettaApplication {}
@@ -58,7 +69,7 @@ glib::wrapper! {
 
 impl Default for FughettaApplication {
     fn default() -> Self {
-        Self::new()
+        glib::Object::new()
     }
 }
 

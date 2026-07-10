@@ -16,7 +16,7 @@ const TAIL: f32 = 120.0;
 
 mod imp {
     use std::cell::{Cell, OnceCell, RefCell};
-    use std::sync::OnceLock;
+    
 
     use glib::subclass::InitializingObject;
     use gtk::PopoverMenu;
@@ -277,7 +277,7 @@ mod imp {
                 return;
             };
 
-            let Some(pos) = view.imp().row_index(&*self.obj()) else {
+            let Some(pos) = view.imp().row_index(&self.obj()) else {
                 return;
             };
 
