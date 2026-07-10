@@ -1,7 +1,7 @@
 use adw::prelude::*;
 use adw::subclass::prelude::*;
 use gtk::{gdk, gio, glib, graphene, gsk};
-use mutsumi::PlaylistItem;
+use mutsumi::{MutsumiPlayer, PlaylistItem};
 
 use super::SourceActionRow;
 
@@ -12,6 +12,9 @@ const DRAG_THRESHOLD: f32 = 6.0;
 mod imp {
     use std::cell::{Cell, RefCell};
     use std::sync::OnceLock;
+
+    use gtk::glib::WeakRef;
+    use mutsumi::MutsumiPlayer;
 
     use super::*;
 
@@ -42,6 +45,8 @@ mod imp {
 
         /// Currently activated (playing) position in the playlist.
         pub pos: Cell<Option<usize>>,
+
+        pub player: WeakRef<MutsumiPlayer>,
     }
 
     #[glib::object_subclass]
@@ -240,9 +245,27 @@ mod imp {
         }
 
         pub fn set_playing_position(&self, row: &SourceActionRow) {
-            if let Some(pos) = self.row_index(row) {
-                self.pos.set(Some(pos));
-            }
+            let Some(pos) = self.row_index(row) else {
+                return;
+            };
+
+            self.pos.set(Some(pos));
+
+            self.update_player_title(row);
+        }
+
+        fn update_player_title(&self, row: &SourceActionRow) {
+            let Some(player) = self.player.upgrade() else {
+                return;
+            };
+
+            player.set_video_title(row.title());
+
+            let Some(subtitle) = row.subtitle() else {
+                return;
+            };
+
+            player.set_video_subtitle(subtitle);
         }
 
         pub fn move_row_to_top(&self, row: &SourceActionRow) {
@@ -697,6 +720,10 @@ glib::wrapper! {
 impl PlaylistView {
     pub fn new() -> Self {
         glib::Object::new()
+    }
+
+    pub fn set_player(&self, player: Option<&MutsumiPlayer>) {
+        self.imp().player.set(player);
     }
 
     pub fn set_store(&self, store: Option<&gio::ListStore>) {

@@ -449,5 +449,7 @@ impl PlayList {
 
     pub fn set_player(&self, player: Option<&MutsumiPlayer>) {
         self.imp().player.set(player);
+
+        self.imp().view.set_player(player);
     }
 }
