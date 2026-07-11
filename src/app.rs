@@ -8,9 +8,7 @@ mod imp {
     use super::*;
 
     #[derive(Debug, Default)]
-    pub struct FughettaApplication {
-        files: Vec<gtk::gio::File>,
-    }
+    pub struct FughettaApplication;
 
     #[glib::object_subclass]
     impl ObjectSubclass for FughettaApplication {

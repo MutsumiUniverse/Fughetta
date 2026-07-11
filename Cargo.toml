@@ -1,6 +1,6 @@
 [package]
 name = "fughetta"
-version = "0.1.0-alpha26070801"
+version = "0.1.0"
 edition = "2024"
 
 [dependencies]
@@ -9,10 +9,7 @@ adw = { version = "0.9", package = "libadwaita", features = ["v1_9"] }
 tracing-subscriber = { version = "0.3", features = ["chrono", "env-filter"] }
 clap = { version = "4", features = ["derive"] }
 tracing = "0.1.44"
-tokio = { version = "1", features = ["rt", "sync"] }
-# mutsumi = { git = "https://github.com/MutsumiUniverse/Mutsumi.git" }
-mutsumi = { path = "../mutsumi" }
-
+mutsumi = { git = "https://github.com/MutsumiUniverse/Mutsumi.git" }
 
 [build-dependencies]
 glib-build-tools = "0.22"

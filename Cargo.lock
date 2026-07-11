@@ -347,14 +347,13 @@ dependencies = [
 
 [[package]]
 name = "fughetta"
-version = "0.1.0-alpha26070801"
+version = "0.1.0"
 dependencies = [
  "clap",
  "glib-build-tools",
  "gtk4",
  "libadwaita",
  "mutsumi",
- "tokio",
  "tracing",
  "tracing-subscriber",
 ]
@@ -1145,6 +1144,7 @@ checksum = "956787520e75e9bd233246045d19f42fb73242759cc57fba9611d940ae96d4b0"
 [[package]]
 name = "mutsumi"
 version = "0.1.0"
+source = "git+https://github.com/MutsumiUniverse/Mutsumi.git#81c9904ea7561fdb4cb3ea54705d407ff6824db4"
 dependencies = [
  "ash",
  "atomic-wait",
