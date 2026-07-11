@@ -16,7 +16,6 @@ const TAIL: f32 = 120.0;
 
 mod imp {
     use std::cell::{Cell, OnceCell, RefCell};
-    
 
     use glib::subclass::InitializingObject;
     use gtk::PopoverMenu;

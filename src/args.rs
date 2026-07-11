@@ -64,11 +64,7 @@ impl Args {
     }
 
     pub fn init_files(&self) {
-        let files = self
-            .file
-            .iter()
-            .map(gtk::gio::File::for_path)
-            .collect();
+        let files = self.file.iter().map(gtk::gio::File::for_path).collect();
 
         ARG_FILES.set(files).expect("Failed to set ARG_FILES???");
     }

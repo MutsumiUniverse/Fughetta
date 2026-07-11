@@ -116,10 +116,8 @@ mod imp {
                 return;
             }
 
-            let items: Vec<PlaylistItem> = external_files
-                .iter()
-                .map(PlaylistItem::from_file)
-                .collect();
+            let items: Vec<PlaylistItem> =
+                external_files.iter().map(PlaylistItem::from_file).collect();
 
             let Some(playlist) = self.playlist.upgrade() else {
                 return;

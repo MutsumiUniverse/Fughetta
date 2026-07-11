@@ -4,7 +4,7 @@ using Adw 1;
 template $PlaceHolderStatus: Adw.Bin {
     width-request: 400;
     child: Adw.StatusPage {
-        icon-name: "media-playback-start-symbolic";
+        icon-name: "io.github.mutsumiuniverse.fughetta";
         title: _("Fughetta");
         description: _("Pick/Drop File/URI/Folders to play");
         Box {
@@ -41,18 +41,18 @@ template $PlaceHolderStatus: Adw.Bin {
                 }
             }
 
-            Button {
-                Adw.ButtonContent {
-                    icon-name: "history-undo-symbolic";
-                    label: _("Restore From History");
-                }
-
-                clicked => $on_restore_history_activated() swapped;
-
-                styles [
-                    "pill",
-                ]
-            }
+            //Button {
+            //    Adw.ButtonContent {
+            //        icon-name: "history-undo-symbolic";
+            //        label: _("Restore From History");
+            //    }
+            //
+            //    clicked => $on_restore_history_activated() swapped;
+            //
+            //    styles [
+            //        "pill",
+            //    ]
+            //}
         }
     };
 }

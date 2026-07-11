@@ -10,7 +10,7 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
     <property name="width-request">400</property>
     <property name="child">
       <object class="AdwStatusPage">
-        <property name="icon-name">media-playback-start-symbolic</property>
+        <property name="icon-name">io.github.mutsumiuniverse.fughetta</property>
         <property name="title" translatable="yes">Fughetta</property>
         <property name="description" translatable="yes">Pick/Drop File/URI/Folders to play</property>
         <child>
@@ -50,20 +50,6 @@ corresponding .blp file and regenerate this file with blueprint-compiler.
                     </style>
                   </object>
                 </child>
-              </object>
-            </child>
-            <child>
-              <object class="GtkButton">
-                <child>
-                  <object class="AdwButtonContent">
-                    <property name="icon-name">history-undo-symbolic</property>
-                    <property name="label" translatable="yes">Restore From History</property>
-                  </object>
-                </child>
-                <signal name="clicked" handler="on_restore_history_activated" swapped="True"/>
-                <style>
-                  <class name="pill"/>
-                </style>
               </object>
             </child>
           </object>

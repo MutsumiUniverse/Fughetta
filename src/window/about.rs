@@ -14,6 +14,7 @@ impl Default for FughettaAboutDialog {
                 .version(CLIENT_VERSION)
                 .comments("A GTK4 frontend for MPV, embedded by wl-proxy, written in Rust.")
                 .website("https://github.com/mutsumiuniverse/fughetta")
+                .application_icon("io.github.mutsumiuniverse.fughetta")
                 .license_type(gtk::License::Gpl30)
                 .build(),
         )
