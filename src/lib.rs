@@ -7,9 +7,7 @@ mod playlist;
 mod status;
 mod window;
 
-use args::*;
-use clap::Parser;
-use gtk::prelude::*;
+use gtk::{glib, prelude::*};
 
 pub use app::FughettaApplication as Application;
 pub use files::*;
@@ -21,9 +19,7 @@ pub const APP_RESOURCE_PATH: &str = "/io/github/mutsumiuniverse/fughetta";
 pub const CLIENT_ID: &str = "Fughetta";
 pub const CLIENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn run() {
-    Args::parse().init();
-
+pub fn run() -> glib::ExitCode {
     gtk::gio::resources_register_include!("fughetta.gresource")
         .expect("Failed to register resources.");
 
@@ -31,5 +27,5 @@ pub fn run() {
 
     gtk::glib::set_application_name(CLIENT_ID);
 
-    Application::new().run_with_args::<&str>(&[]);
+    Application::new().run()
 }

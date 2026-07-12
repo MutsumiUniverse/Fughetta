@@ -1,24 +1,25 @@
 mod about;
 
+use std::time::Duration;
+
 use about::FughettaAboutDialog;
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;
-use gtk::{CompositeTemplate, glib};
+use gtk::{
+    CompositeTemplate,
+    glib::{self, spawn_future_local},
+};
 
-use mutsumi::MutsumiPlayer;
+use mutsumi::{MutsumiPlayer, PlaylistItem};
 
-use crate::playlist::PlayList;
+use crate::playlist::{PlayList, PlaylistFileItem};
 
 mod imp {
-    use std::time::Duration;
 
-    use crate::{ARG_FILES, playlist::PlaylistFileItem};
+    use crate::playlist::PlaylistFileItem;
     use glib::subclass::InitializingObject;
-    use gtk::{
-        gdk,
-        glib::{WeakRef, spawn_future_local},
-    };
+    use gtk::{gdk, glib::WeakRef};
     use mutsumi::PlaylistItem;
 
     use crate::status::PlaceHolderStatus;
@@ -93,7 +94,6 @@ mod imp {
 
             self.setup_drag_bin();
             self.setup_file_drop();
-            self.setup_files_external();
         }
     }
 
@@ -107,31 +107,6 @@ mod imp {
             let drag_bin = adw::Bin::builder().css_classes(vec!["drop-target"]).build();
 
             self.player.drag_revealer().set_child(Some(&drag_bin));
-        }
-
-        fn setup_files_external(&self) {
-            let external_files = ARG_FILES.get().cloned().unwrap_or_default();
-
-            if external_files.is_empty() {
-                return;
-            }
-
-            let items: Vec<PlaylistItem> =
-                external_files.iter().map(PlaylistItem::from_file).collect();
-
-            let Some(playlist) = self.playlist.upgrade() else {
-                return;
-            };
-
-            // we need to wait mpv proxy and event loop init
-            // and I have no idea how to do it properly, so just wait 200ms
-            spawn_future_local(async move {
-                let _ = glib::future_with_timeout(Duration::from_millis(200), async move {
-                    playlist.imp().insert_playlist_items(0, &items);
-                    playlist.imp().play_when_store_changed();
-                })
-                .await;
-            });
         }
 
         fn setup_file_drop(&self) {
@@ -198,6 +173,28 @@ glib::wrapper! {
 impl FughettaWindow {
     pub fn new(app: &crate::Application) -> Self {
         glib::Object::builder().property("application", app).build()
+    }
+
+    pub fn open_files(&self, files: &[gtk::gio::File]) {
+        if files.is_empty() {
+            return;
+        }
+
+        let items: Vec<PlaylistItem> = files.iter().map(PlaylistItem::from_file).collect();
+
+        let Some(playlist) = self.imp().playlist.upgrade() else {
+            return;
+        };
+
+        // we need to wait mpv proxy and event loop init
+        // and I have no idea how to do it properly, so just wait 200ms
+        spawn_future_local(async move {
+            let _ = glib::future_with_timeout(Duration::from_millis(200), async move {
+                playlist.imp().insert_playlist_items(0, &items);
+                playlist.imp().play_when_store_changed();
+            })
+            .await;
+        });
     }
 
     pub fn bind_action_entries(&self) {

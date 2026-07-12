@@ -1,18 +1,13 @@
-use std::{env, io, path::PathBuf};
+use std::{env, io};
 
-use clap::Parser;
 use tracing::info;
 use tracing_subscriber::{EnvFilter, fmt::time::ChronoLocal};
 
-use crate::{ARG_FILES, CLIENT_VERSION, dyn_event};
+use crate::{CLIENT_VERSION, dyn_event};
 
-#[derive(Parser, Debug)]
-#[command(version, about, long_about = None)]
+#[derive(Debug)]
 pub struct Args {
-    pub file: Vec<PathBuf>,
-
-    #[clap(long, short)]
-    log_level: Option<String>,
+    pub log_level: Option<String>,
 }
 
 impl Args {
@@ -63,16 +58,9 @@ impl Args {
         info!("Glib logging redirected to tracing");
     }
 
-    pub fn init_files(&self) {
-        let files = self.file.iter().map(gtk::gio::File::for_path).collect();
-
-        ARG_FILES.set(files).expect("Failed to set ARG_FILES???");
-    }
-
     pub fn init(&self) {
         self.init_tracing_subscriber();
         self.init_glib_to_tracing();
-        self.init_files();
 
         std::panic::set_hook(Box::new(|info| {
             if let Some(s) = info.payload().downcast_ref::<&str>() {

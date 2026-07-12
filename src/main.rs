@@ -1,3 +1,3 @@
-fn main() {
-    fughetta::run();
+fn main() -> gtk::glib::ExitCode {
+    fughetta::run()
 }
