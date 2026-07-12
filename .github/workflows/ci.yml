@@ -15,7 +15,7 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libadwaita-1-dev libgtk-4-dev
+          sudo apt-get install -y build-essential libadwaita-1-dev libgtk-4-dev libgstreamer1.0-dev libmpv-dev
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
