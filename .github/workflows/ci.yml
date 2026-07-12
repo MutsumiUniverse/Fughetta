@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-26.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+          build-essential libadwaita-1-dev libgtk-4-dev \
+          libmpv-dev blueprint-compiler
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          cache: ${{ github.event_name != 'pull_request' }}
+      - name: Build
+        run: cargo build --release --locked
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: target/release/fughetta
+          archive: false
