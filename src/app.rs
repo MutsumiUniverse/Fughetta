@@ -35,14 +35,11 @@ mod imp {
         }
 
         fn handle_local_options(&self, options: &glib::VariantDict) -> ControlFlow<glib::ExitCode> {
-            let log_level = options.lookup::<String>("log-level");
-
-            let Ok(log_level) = log_level else {
+            let Ok(log_level) = options.lookup::<String>("log-level") else {
                 unreachable!()
             };
 
-            let args = Args { log_level };
-            args.init();
+            Args { log_level }.init();
 
             ControlFlow::Continue(())
         }
