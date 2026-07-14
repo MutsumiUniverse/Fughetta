@@ -54,6 +54,8 @@ mod imp {
             };
 
             window.open_files(files);
+
+            window.present();
         }
     }
 
