@@ -1,0 +1,69 @@
+# Maintainer: MutsumiUniverse <rin@notalium.co>
+
+_pkgname="fughetta"
+pkgname="${_pkgname}-git"
+pkgver=0.1.0.r9.gc113d0f
+pkgrel=1
+pkgdesc='A GTK4 frontend for MPV, using wl-proxy, written in Rust'
+arch=('x86_64')
+url="https://github.com/MutsumiUniverse/fughetta"
+license=('GPL-3.0-only')
+provides=("${_pkgname}" "${pkgname}")
+conflicts=("${_pkgname}")
+depends=(
+    'gtk4'
+    'libadwaita'
+    'mpv'
+)
+makedepends=(
+    'git'
+    'clang'
+    'lld'
+    'llvm'
+    'cargo'
+    'blueprint-compiler'
+)
+source=(
+    "${_pkgname}::git+https://github.com/MutsumiUniverse/fughetta.git"
+)
+sha256sums=('SKIP')
+
+pkgver() {
+    cd "${_pkgname}"
+    echo $(grep '^version =' Cargo.toml | head -n1 | cut -d\" -f2).r$(git rev-list --count HEAD).g$(git rev-parse --short=7 HEAD)
+}
+
+prepare() {
+    cd "${srcdir}/${_pkgname}"
+
+    export CC=clang
+    export CXX=clang++
+    export AR=llvm-ar
+    export NM=llvm-nm
+    export RANLIB=llvm-ranlib
+
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
+build() {
+    cd "${srcdir}/${_pkgname}"
+
+    export RUSTUP_TOOLCHAIN=stable
+    export CARGO_TARGET_DIR=target
+    export CC=clang
+    export CXX=clang++
+    export AR=llvm-ar
+    export NM=llvm-nm
+    export RANLIB=llvm-ranlib
+    export RUSTFLAGS="-C linker=clang -C link-arg=-fuse-ld=lld"
+
+    cargo build --frozen --release
+}
+
+package() {
+    cd "${_pkgname}"
+
+    install -Dm0755 -t "${pkgdir}/usr/bin/" "target/release/${_pkgname}"
+    install -Dm644 "resources/io.github.mutsumiuniverse.fughetta.desktop.in" "${pkgdir}/usr/share/applications/io.github.mutsumiuniverse.fughetta.desktop"
+    install -Dm644 "resources/icons/io.github.mutsumiuniverse.fughetta.png" "${pkgdir}/usr/share/icons/hicolor/256x256/apps/io.github.mutsumiuniverse.fughetta.png"
+}
