@@ -23,6 +23,7 @@ mod imp {
     use gtk::glib::WeakRef;
 
     use crate::playlist::PlaylistView;
+use crate::utils::EscapeGTKString;
 
     use super::*;
 
@@ -59,7 +60,7 @@ mod imp {
                 bindings.push(
                     item.bind_property("filename", &*obj, "title")
                         .transform_to(|_, filename: String| {
-                            Some(mutsumi::title_from_uri(&filename))
+                            Some(mutsumi::title_from_uri(&filename).escape_string())
                         })
                         .sync_create()
                         .build(),
@@ -67,6 +68,9 @@ mod imp {
 
                 bindings.push(
                     item.bind_property("filename", &*obj, "subtitle")
+                        .transform_to(|_, str: String| {
+                            Some(str.escape_string())
+                        })
                         .sync_create()
                         .build(),
                 );

@@ -6,6 +6,7 @@ mod macros;
 mod playlist;
 mod status;
 mod window;
+mod utils;
 
 use gtk::{glib, prelude::*};
 
