@@ -5,6 +5,9 @@ on:
   pull_request:
     branches: [ master ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build
@@ -33,5 +36,5 @@ jobs:
         if: ${{ github.ref_type == 'tag' }}
         uses: softprops/action-gh-release@v3
         with:
-          path: target/release/fughetta
+          files: target/release/fughetta
           prerelease: ${{ contains(github.ref_name, 'rc') }}
