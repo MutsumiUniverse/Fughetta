@@ -112,6 +112,8 @@ mod imp {
         fn setup_file_drop(&self) {
             let drop = gtk::DropTarget::new(gdk::FileList::static_type(), gdk::DragAction::COPY);
 
+            drop.set_types(&[gdk::FileList::static_type(), String::static_type()]);
+
             let revealer = self.player.drag_revealer();
 
             drop.connect_enter(glib::clone!(
@@ -139,12 +141,22 @@ mod imp {
                 #[upgrade_or]
                 false,
                 move |_, value, _, _| {
-                    let Ok(files) = value.get::<gdk::FileList>() else {
+                    let items: Vec<PlaylistItem> = if let Ok(files) = value.get::<gdk::FileList>() {
+                        files.files().iter().map(PlaylistItem::from_file).collect()
+                    } else if let Ok(uri_list) = value.get::<String>() {
+                        uri_list
+                            .lines()
+                            .map(str::trim)
+                            .filter(|uri| !uri.is_empty() && !uri.starts_with('#'))
+                            .map(|uri| PlaylistItem::with_full_uri(uri))
+                            .collect()
+                    } else {
                         return false;
                     };
 
-                    let items: Vec<PlaylistItem> =
-                        files.files().iter().map(PlaylistItem::from_file).collect();
+                    if items.is_empty() {
+                        return false;
+                    }
 
                     let Some(playlist) = imp.playlist.upgrade() else {
                         return false;

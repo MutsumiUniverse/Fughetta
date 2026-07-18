@@ -315,7 +315,7 @@ mod imp {
                         return;
                     }
 
-                    let item = PlaylistItem::with_full_uri(&url, false);
+                    let item = PlaylistItem::with_full_uri(&url);
 
                     callback(obj.imp(), item);
                 }

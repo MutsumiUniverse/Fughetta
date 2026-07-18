@@ -10,6 +10,6 @@ impl PlaylistFileItem for PlaylistItem {
     fn from_file(file: &gio::File) -> PlaylistItem {
         let uri = file.uri().to_string();
 
-        PlaylistItem::with_full_uri(&uri, false)
+        PlaylistItem::with_full_uri(&uri)
     }
 }
