@@ -8,7 +8,7 @@ gtk = { version = "0.11", package = "gtk4", features = ["v4_22"] }
 adw = { version = "0.9", package = "libadwaita", features = ["v1_9"] }
 tracing-subscriber = { version = "0.3", features = ["chrono", "env-filter"] }
 tracing = "0.1.44"
-mutsumi = { git = "https://github.com/MutsumiUniverse/Mutsumi.git" }
+mutsumi = "0.6"
 
 [build-dependencies]
 glib-build-tools = "0.22"
